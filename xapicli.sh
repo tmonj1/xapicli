@@ -58,9 +58,11 @@ function _xapicli_completion() {
       return 0
       ;;
     -q)
+      local method="${COMP_WORDS[1]}"
+      local resource="/${COMP_WORDS[2]}"
       local query_options
       query_options=$(curl -s "file://${apidef_file}" | \
-      jq -r '"'$url'.'"$method"' | .parameters | .[] | select(.in == "query") | .name')
+      jq -r '.["'"${resource}"'"][] | select(.method == "'"${method}"'") | .query_parameters | map(.name) | .[] ')
       COMPREPLY=( $(compgen -W "${query_options}" -- ${cur}) )
       return 0
       ;;

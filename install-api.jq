@@ -103,7 +103,6 @@
           del(.post_parameters)
         end
       | del(.post_parameters_required)
-      | map(.method as $m | {(.method): .} | del(.[$m].method))
     ]
   }) 
 | from_entries
