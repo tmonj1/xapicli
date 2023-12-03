@@ -1,0 +1,10 @@
+{
+  "editor.tabSize": 2,
+  "shellformat.path": "/usr/local/bin/shfmt",
+		"shellformat.useEditorConfig": true,
+		"editor.formatOnSave": true,
+		"editor.autoIndent": "brackets",
+		"[shellscript]": {
+		  "editor.wordWrap": "bounded",
+		  "editor.wordWrapColumn": 80
+}

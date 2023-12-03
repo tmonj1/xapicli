@@ -1,0 +1,437 @@
+{
+  "/pet": [
+    {
+      "method": "post",
+      "query_parameters": [],
+      "post_parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "format": "int64",
+          "example": 10
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "example": "doggie",
+          "required": true
+        },
+        {
+          "name": "category",
+          "x-swagger-router-model": "io.swagger.petstore.model.Category",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1
+            },
+            "name": {
+              "type": "string",
+              "example": "Dogs"
+            }
+          },
+          "xml": {
+            "name": "category"
+          },
+          "type": "object"
+        },
+        {
+          "name": "photoUrls",
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          },
+          "items": {
+            "type": "string",
+            "xml": {
+              "name": "photoUrl"
+            }
+          },
+          "required": true
+        },
+        {
+          "name": "tags",
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          },
+          "items": {
+            "x-swagger-router-model": "io.swagger.petstore.model.Tag",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "xml": {
+              "name": "tag"
+            },
+            "type": "object"
+          }
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "description": "pet status in the store",
+          "enum": [
+            "available",
+            "pending",
+            "sold"
+          ]
+        }
+      ]
+    },
+    {
+      "method": "put",
+      "query_parameters": [],
+      "post_parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "format": "int64",
+          "example": 10
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "example": "doggie",
+          "required": true
+        },
+        {
+          "name": "category",
+          "x-swagger-router-model": "io.swagger.petstore.model.Category",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "int64",
+              "example": 1
+            },
+            "name": {
+              "type": "string",
+              "example": "Dogs"
+            }
+          },
+          "xml": {
+            "name": "category"
+          },
+          "type": "object"
+        },
+        {
+          "name": "photoUrls",
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          },
+          "items": {
+            "type": "string",
+            "xml": {
+              "name": "photoUrl"
+            }
+          },
+          "required": true
+        },
+        {
+          "name": "tags",
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          },
+          "items": {
+            "x-swagger-router-model": "io.swagger.petstore.model.Tag",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "xml": {
+              "name": "tag"
+            },
+            "type": "object"
+          }
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "description": "pet status in the store",
+          "enum": [
+            "available",
+            "pending",
+            "sold"
+          ]
+        }
+      ]
+    }
+  ],
+  "/pet/findByStatus": [
+    {
+      "method": "get",
+      "query_parameters": [
+        {
+          "name": "status",
+          "type": "string",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "/pet/findByTags": [
+    {
+      "method": "get",
+      "query_parameters": [
+        {
+          "name": "tags",
+          "type": "array",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "/pet/{petId}": [
+    {
+      "method": "get",
+      "query_parameters": []
+    },
+    {
+      "method": "post",
+      "query_parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "post_parameters": []
+    },
+    {
+      "method": "delete",
+      "query_parameters": []
+    }
+  ],
+  "/pet/{petId}/uploadImage": [
+    {
+      "method": "post",
+      "query_parameters": [
+        {
+          "name": "additionalMetadata",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "post_parameters": []
+    }
+  ],
+  "/store/inventory": [
+    {
+      "method": "get",
+      "query_parameters": []
+    }
+  ],
+  "/store/order": [
+    {
+      "method": "post",
+      "query_parameters": [],
+      "post_parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "format": "int64",
+          "example": 10
+        },
+        {
+          "name": "petId",
+          "type": "integer",
+          "format": "int64",
+          "example": 198772
+        },
+        {
+          "name": "quantity",
+          "type": "integer",
+          "format": "int32",
+          "example": 7
+        },
+        {
+          "name": "shipDate",
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "description": "Order Status",
+          "enum": [
+            "placed",
+            "approved",
+            "delivered"
+          ],
+          "example": "approved"
+        },
+        {
+          "name": "complete",
+          "type": "boolean"
+        }
+      ]
+    }
+  ],
+  "/store/order/{orderId}": [
+    {
+      "method": "get",
+      "query_parameters": []
+    },
+    {
+      "method": "delete",
+      "query_parameters": []
+    }
+  ],
+  "/user": [
+    {
+      "method": "post",
+      "query_parameters": [],
+      "post_parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "format": "int64",
+          "example": 10
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "example": "theUser"
+        },
+        {
+          "name": "firstName",
+          "type": "string",
+          "example": "John"
+        },
+        {
+          "name": "lastName",
+          "type": "string",
+          "example": "James"
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "example": "john@email.com"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "example": 12345
+        },
+        {
+          "name": "phone",
+          "type": "string",
+          "example": 12345
+        },
+        {
+          "name": "userStatus",
+          "type": "integer",
+          "format": "int32",
+          "example": 1,
+          "description": "User Status"
+        }
+      ]
+    }
+  ],
+  "/user/createWithList": [
+    {
+      "method": "post",
+      "query_parameters": [],
+      "post_parameters": []
+    }
+  ],
+  "/user/login": [
+    {
+      "method": "get",
+      "query_parameters": [
+        {
+          "name": "username",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "/user/logout": [
+    {
+      "method": "get",
+      "query_parameters": []
+    }
+  ],
+  "/user/{username}": [
+    {
+      "method": "get",
+      "query_parameters": []
+    },
+    {
+      "method": "put",
+      "query_parameters": [],
+      "post_parameters": [
+        {
+          "name": "id",
+          "type": "integer",
+          "format": "int64",
+          "example": 10
+        },
+        {
+          "name": "username",
+          "type": "string",
+          "example": "theUser"
+        },
+        {
+          "name": "firstName",
+          "type": "string",
+          "example": "John"
+        },
+        {
+          "name": "lastName",
+          "type": "string",
+          "example": "James"
+        },
+        {
+          "name": "email",
+          "type": "string",
+          "example": "john@email.com"
+        },
+        {
+          "name": "password",
+          "type": "string",
+          "example": 12345
+        },
+        {
+          "name": "phone",
+          "type": "string",
+          "example": 12345
+        },
+        {
+          "name": "userStatus",
+          "type": "integer",
+          "format": "int32",
+          "example": 1,
+          "description": "User Status"
+        }
+      ]
+    },
+    {
+      "method": "delete",
+      "query_parameters": []
+    }
+  ]
+}
