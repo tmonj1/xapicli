@@ -30,31 +30,19 @@
               "example": "Dogs"
             }
           },
-          "xml": {
-            "name": "category"
-          },
           "type": "object"
         },
         {
           "name": "photoUrls",
           "type": "array",
-          "xml": {
-            "wrapped": true
-          },
           "items": {
-            "type": "string",
-            "xml": {
-              "name": "photoUrl"
-            }
+            "type": "string"
           },
           "required": true
         },
         {
           "name": "tags",
           "type": "array",
-          "xml": {
-            "wrapped": true
-          },
           "items": {
             "x-swagger-router-model": "io.swagger.petstore.model.Tag",
             "properties": {
@@ -65,9 +53,6 @@
               "name": {
                 "type": "string"
               }
-            },
-            "xml": {
-              "name": "tag"
             },
             "type": "object"
           }
@@ -114,31 +99,19 @@
               "example": "Dogs"
             }
           },
-          "xml": {
-            "name": "category"
-          },
           "type": "object"
         },
         {
           "name": "photoUrls",
           "type": "array",
-          "xml": {
-            "wrapped": true
-          },
           "items": {
-            "type": "string",
-            "xml": {
-              "name": "photoUrl"
-            }
+            "type": "string"
           },
           "required": true
         },
         {
           "name": "tags",
           "type": "array",
-          "xml": {
-            "wrapped": true
-          },
           "items": {
             "x-swagger-router-model": "io.swagger.petstore.model.Tag",
             "properties": {
@@ -149,9 +122,6 @@
               "name": {
                 "type": "string"
               }
-            },
-            "xml": {
-              "name": "tag"
             },
             "type": "object"
           }

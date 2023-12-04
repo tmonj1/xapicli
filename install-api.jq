@@ -106,3 +106,4 @@
     ]
   }) 
 | from_entries
+| del(.. | .xml?)

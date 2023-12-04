@@ -20,6 +20,16 @@ export XAPICLI_CONF_DIR=${PWD}/.xapicli
 
 ```
 
+If you are on a Mac, do below
+
+```
+# install GNU getopt
+brew install gnu-getopt
+
+# add `getopt` path to your PATH
+export PATH="/usr/local/opt/gnu-getopt/bin:${PATH}"
+```
+
 ### Supported OpenAPI format
 
 `xapicli` only uses part of request definition. It ignores the rest of part, for example, response and security. It also recognizes part of specification even in the request definition. For example, It only recognizes `application/json` part of requests, igores other types of content like `application/xml`.
