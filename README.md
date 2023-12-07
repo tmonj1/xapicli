@@ -39,7 +39,16 @@ export PATH="/usr/local/opt/gnu-getopt/bin:${PATH}"
 * `explode`
 
 
-## memo
+## Todo's
 
-## configファイルを見てOpenAPI specファイルを開く
-cat ${XAPICLI_CONF_DIR}/$(jq -r '. as $root | .default as $default_target | $root[$default_target] | .openapispecfile ' .xapicli/xapicli.conf)
+* HTTPメソッドに合致したリソースだけ候補に追加する
+* `-`を
+* short/longオプションをコマンド補完に追加
+* `-p`と`-q`の必須に`*`をつける
+* 実行系
+* enum対応
+* object対応
+* `summary` に description を追加
+* 全体的にリファクタリング
+* Unit Test
+* ShellDoc

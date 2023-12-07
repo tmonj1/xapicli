@@ -23,6 +23,9 @@ trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND";' ERR
 # constants
 #
 
+declare readonly LONG_OPTS="help,summary::,summary-csv"
+declare readonly SHORT_OPTS="q:p:"
+
 # escape sequences for colored output on the console
 RSET="\e[0m"  # reset
 FRED="\e[31m" # foreground red
@@ -175,8 +178,6 @@ xapicli() {
   #
   # argument parsing
   #
-  local readonly LONG_OPTS="help,summary::,summary-csv"
-  local readonly SHORT_OPTS="q:p:"
   args=$(getopt -o "${SHORT_OPTS}" -l "${LONG_OPTS}" -- "$@") || return 1
   eval "set -- $args"
 
@@ -190,20 +191,24 @@ xapicli() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --)
+        # end of options
         shift;
         ;;
       --help)
+        # show help (xapicli --help)
         _usage
         return 0
         ;;
       --summary-csv)
-        summary_csv=true
+        # output api summary in csv (xapicli --summary-csv)
         shift
+        summary_csv=true
         ;;
       --summary)
-        # xapicli --summary
-        # xapicli --summary=<resource>
-        # xapicli <method> <resource> --summary
+        # output api summary
+        # all methods for all resources : xapicli --summary
+        # all methods for a resource    : xapicli --summary=<resource>
+        # a method for a resource       : xapicli <method> <resource> --summary
         shift
         if [[ "${1:0:1}" != "-" ]]; then
           resource="$1"
@@ -212,20 +217,24 @@ xapicli() {
         show_summary=true
         ;;
       get|post|put|delete)
+        # http method
         method="$1"
         shift
         ;;
       -q)
+        # query parameter (xapicli <method> <resource> -q <query_param> <value>)
         shift
         query_params+=("$1")
         shift
         ;;
       -p)
+        # post parameter (xapicli <method> <resource> -p <post_param> <value>)
         shift
         post_params+=("$1")
         shift
         ;;
       *)
+        # resource (xapicli <method> <resource>)
         local matched
         matched=$(echo "${apidef}" | jq -r 'keys[] | select(. == "'"$1"'")' | wc -l)
         matched="${matched//[[:blank:]]/}"
