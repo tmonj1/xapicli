@@ -122,7 +122,9 @@ _xapicli_completion() {
       return 0
       ;;
     get|post|put|delete)
-      COMPREPLY=( $(compgen -W "$(echo "${apidef}" | jq -r 'keys[]')" -- "${cur}") )
+      # 選択されたHTTPメソッドをサポートするリソースのみ補完候補に表示 (#12)
+      COMPREPLY=( $(compgen -W "$(echo "${apidef}" | jq -r --arg m "${prev}" \
+        'to_entries[] | select(any(.value[]; .method == $m)) | .key')" -- "${cur}") )
       return 0
       ;;
     -q)
