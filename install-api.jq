@@ -74,14 +74,16 @@
           method: .key,
           query_parameters: (
             [
-              .value.parameters[]? 
+              .value.parameters[]?
               | select(.in == "query")
+              | select(.schema.type != "object" and .schema.type != "array")
               | { name: .name, type: .schema.type, required: (.required // false) }
             ] // []
           ),
           post_parameters: (
             .value.requestBody.content["application/json"].schema.properties // []
-            | [to_entries[] | {"name": .key} +  .value] 
+            | [to_entries[] | {"name": .key} + .value]
+            | map(select(.type != "object" and .type != "array"))
           ),
           post_parameters_required: (
             .value.requestBody.content["application/json"].schema.required // {}

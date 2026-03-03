@@ -73,6 +73,7 @@ _usage()
   _msg "Options:"
   _msg "  -q <query_param> <value>  Query parameter"
   _msg "  -p <post_param> <value>   Post parameter"
+  _msg "  -d <json>                 Raw JSON body (overrides -p)"
 }
 
 #
@@ -211,9 +212,10 @@ xapicli() {
   # argument parsing
   #
 
-  # Pre-process: -q/-p はそれぞれ <name> <value> の2引数を取る (#3, #4)
+  # Pre-process: -q/-p はそれぞれ <name> <value> の2引数、-d は <json> の1引数を取る (#3, #4)
   local -a query_params=()
   local -a post_params=()
+  local raw_body=""
   local -a clean_args=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -234,6 +236,15 @@ xapicli() {
         fi
         post_params+=("$1" "$2")
         shift 2
+        ;;
+      -d)
+        shift
+        if [[ $# -lt 1 ]]; then
+          _err "'-d' requires one argument: <json>"
+          return 1
+        fi
+        raw_body="$1"
+        shift
         ;;
       *)
         clean_args+=("$1")
@@ -369,14 +380,19 @@ xapicli() {
   if [[ "${method}" == "get" || "${method}" == "delete" ]]; then
     curl -s -X "${method_upper}" "${full_url}"
   else
-    # POSTパラメータからJSONボディを組み立て
-    local json_body="{}"
-    if [[ ${#post_params[@]} -gt 0 ]]; then
-      local i
-      for ((i=0; i<${#post_params[@]}; i+=2)); do
-        json_body=$(printf '%s' "${json_body}" | \
-          jq --arg k "${post_params[$i]}" --arg v "${post_params[$((i+1))]}" '. + {($k): $v}')
-      done
+    # -d で生JSONが指定された場合はそれを使用、なければ -p からJSONを組み立て
+    local json_body
+    if [[ -n "${raw_body}" ]]; then
+      json_body="${raw_body}"
+    else
+      json_body="{}"
+      if [[ ${#post_params[@]} -gt 0 ]]; then
+        local i
+        for ((i=0; i<${#post_params[@]}; i+=2)); do
+          json_body=$(printf '%s' "${json_body}" | \
+            jq --arg k "${post_params[$i]}" --arg v "${post_params[$((i+1))]}" '. + {($k): $v}')
+        done
+      fi
     fi
     curl -s -X "${method_upper}" "${full_url}" \
       -H "Content-Type: application/json" \
