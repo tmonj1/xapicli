@@ -17,6 +17,17 @@
           "required": true
         },
         {
+          "name": "category.id",
+          "type": "integer",
+          "format": "int64",
+          "example": 1
+        },
+        {
+          "name": "category.name",
+          "type": "string",
+          "example": "Dogs"
+        },
+        {
           "name": "photoUrls",
           "type": "array",
           "items": {
@@ -51,6 +62,17 @@
           "type": "string",
           "example": "doggie",
           "required": true
+        },
+        {
+          "name": "category.id",
+          "type": "integer",
+          "format": "int64",
+          "example": 1
+        },
+        {
+          "name": "category.name",
+          "type": "string",
+          "example": "Dogs"
         },
         {
           "name": "photoUrls",

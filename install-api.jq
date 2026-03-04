@@ -81,8 +81,16 @@
             ] // []
           ),
           post_parameters: (
-            .value.requestBody.content["application/json"].schema.properties // []
-            | [to_entries[] | {"name": .key} + .value]
+            [
+              ((.value.requestBody.content["application/json"].schema.properties // {})
+              | to_entries[])
+              | if .value.type == "object" then
+                  (.key as $parent | ((.value.properties // {}) | to_entries[]) |
+                    {"name": ($parent + "." + .key)} + .value)
+                else
+                  {"name": .key} + .value
+                end
+            ]
             | map(select(.type != "object" and (.type != "array" or (.items.type? != "object" and .items.type? != "array"))))
           ),
           post_parameters_required: (
