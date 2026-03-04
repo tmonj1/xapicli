@@ -445,6 +445,10 @@ xapicli() {
               jq --arg k "${_pk}" --arg v "${_pv}" '
                 if has($k) then .[$k] += [$v] else . + {($k): [$v]} end
               ')
+          elif [[ "${_pk}" == *"."* ]]; then
+            # ドット記法: category.id → {"category": {"id": $v}} (#24)
+            json_body=$(printf '%s' "${json_body}" | \
+              jq --arg k "${_pk}" --arg v "${_pv}" 'setpath(($k | split(".")); $v)')
           else
             json_body=$(printf '%s' "${json_body}" | \
               jq --arg k "${_pk}" --arg v "${_pv}" '. + {($k): $v}')
