@@ -110,14 +110,23 @@ xapicli --summary
 # GET /store/inventory
 xapicli get /store/inventory
 
+# GET with a path parameter
+xapicli get /pet/99
+
 # GET /pet/findByStatus (with a query parameter)
 xapicli get /pet/findByStatus -q status available
 
 # POST /pet (with body parameters)
-xapicli post /pet -p name "My Dog" -p status available
+xapicli post /pet -p name "My Dog" -p status available -p photoUrls "http://example.com/photo.jpg"
 
 # POST /pet (with raw JSON body)
-xapicli post /pet -d '{"name": "My Dog", "status": "available"}'
+xapicli post /pet -d '{"name": "My Dog", "status": "available", "photoUrls": ["http://example.com/photo.jpg"]}'
+
+# PUT /pet with an array parameter (repeat -p for the same key)
+xapicli put /pet -p id 1 -p name "My Dog" -p photoUrls "http://example.com/a.jpg" -p photoUrls "http://example.com/b.jpg" -p status available
+
+# PUT /pet with an object parameter (dot notation)
+xapicli put /pet -p id 1 -p name "My Dog" -p category.id 2 -p category.name "Dogs" -p photoUrls "http://example.com/photo.jpg" -p status available
 
 # DELETE /pet/{petId}
 xapicli delete /pet/1
@@ -128,9 +137,20 @@ xapicli delete /pet/1
 After sourcing the script, tab completion is available:
 
 ```
-$ xapicli <TAB>                         # → get  post  put  delete
-$ xapicli get <TAB>                     # → resources that support GET
-$ xapicli get /pet/findByStatus -q <TAB> # → available query parameters
+$ xapicli <TAB>
+  get  post  put  delete
+
+$ xapicli get <TAB>
+  /pet/findByStatus  /pet/{petId}  /store/inventory  ...
+
+$ xapicli get /pet/findByStatus <TAB>
+  -q  --summary  --help  -d
+
+$ xapicli get /pet/findByStatus -q <TAB>
+  status
+
+$ xapicli get /pet/findByStatus -q status <TAB>
+  available  pending  sold
 ```
 
 ---
@@ -178,9 +198,14 @@ Methods:
 
 Options:
   -q <name> <value>      Query parameter (repeatable)
-  -p <name> <value>      Body parameter — builds a JSON object (repeatable)
+  -p <name> <value>      Body parameter (repeatable); builds a JSON object
+                           - Repeat the same name to build a JSON array:
+                             -p tags foo -p tags bar  →  {"tags":["foo","bar"]}
+                           - Use dot notation for nested objects:
+                             -p category.id 1 -p category.name Dogs  →  {"category":{"id":"1","name":"Dogs"}}
   -d <json>              Raw JSON body (overrides -p)
   --summary[=<resource>] Print available endpoints (optionally filtered by resource)
+                           Required params are marked with *, array params with []
   --summary-csv          Print endpoints in CSV format
   --help                 Show usage
 ```
@@ -200,17 +225,20 @@ xapicli get /pet/findByStatus --summary
 # GET with a query parameter
 xapicli get /pet/findByStatus -q status available
 
-# GET with multiple query parameters
-xapicli get /pet/findByStatus -q status available -q limit 10
+# GET with a path parameter
+xapicli get /pet/99
 
 # POST with body parameters
-xapicli post /pet -p name "My Dog" -p status available
+xapicli post /pet -p name "My Dog" -p status available -p photoUrls "http://example.com/photo.jpg"
 
 # POST with raw JSON body
 xapicli post /pet -d '{"id": 1, "name": "My Dog", "status": "available"}'
 
-# PUT
-xapicli put /pet -p id 1 -p name "My Dog" -p status sold
+# PUT with an array parameter (repeat the same key to build a JSON array)
+xapicli put /pet -p id 1 -p name "My Dog" -p photoUrls "http://example.com/a.jpg" -p photoUrls "http://example.com/b.jpg" -p status available
+
+# PUT with an object parameter (dot notation for nested fields)
+xapicli put /pet -p id 1 -p name "My Dog" -p category.id 2 -p category.name "Dogs" -p photoUrls "http://example.com/photo.jpg" -p status available
 
 # DELETE
 xapicli delete /pet/1
@@ -222,9 +250,10 @@ xapicli delete /pet/1
 
 - `$ref` must be pre-resolved with `json-refs` before processing
 - Only `application/json` request bodies are recognized
-- Object-type and array-type parameters are silently filtered out
+- Array parameters are supported only when items are scalar types (string, integer, etc.); arrays of objects are not supported
+- Object parameters are supported one level deep via dot notation; deeper nesting is not supported
 - Authentication headers must be added manually (not supported natively)
-- `enum`, `explode`, and nested object constraints are not enforced
+- `explode` and deeply nested object constraints are not enforced
 
 ---
 
