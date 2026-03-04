@@ -123,6 +123,27 @@ _xapicli_completion() {
 
   local http_methods="get post put delete"
 
+  # -q/-p の値補完: 直前が param 名で2つ前が -q/-p なら enum 値を候補に (#15)
+  if [[ COMP_CWORD -ge 4 ]]; then
+    local _flag="${COMP_WORDS[COMP_CWORD-2]}"
+    if [[ "${_flag}" == "-q" || "${_flag}" == "-p" ]]; then
+      local _method="${COMP_WORDS[1]}"
+      local _res="${COMP_WORDS[2]}"
+      local _param="${prev}"
+      local _key
+      [[ "${_flag}" == "-q" ]] && _key="query_parameters" || _key="post_parameters"
+      local _enums
+      _enums=$(echo "${apidef}" | jq -r \
+        --arg res "${_res}" --arg meth "${_method}" \
+        --arg p "${_param}" --arg k "${_key}" \
+        '.[$res][]? | select(.method == $meth) | .[$k][] | select(.name == $p) | .enum[]?')
+      if [[ -n "${_enums}" ]]; then
+        COMPREPLY=( $(compgen -W "${_enums}" -- "${cur}") )
+        return 0
+      fi
+    fi
+  fi
+
   case "${prev}" in
     xapicli)
       COMPREPLY=( $(compgen -W "${http_methods}" -- "${cur}") )
