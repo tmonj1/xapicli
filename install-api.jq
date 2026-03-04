@@ -83,7 +83,7 @@
           post_parameters: (
             .value.requestBody.content["application/json"].schema.properties // []
             | [to_entries[] | {"name": .key} + .value]
-            | map(select(.type != "object" and .type != "array"))
+            | map(select(.type != "object" and (.type != "array" or (.items.type? != "object" and .items.type? != "array"))))
           ),
           post_parameters_required: (
             .value.requestBody.content["application/json"].schema.required // {}

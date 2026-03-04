@@ -287,6 +287,7 @@ xapicli() {
   local show_summary=false
   local method=""
   local resource=""
+  local apidef_resource=""
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --)
@@ -328,6 +329,7 @@ xapicli() {
         matched="${matched//[[:blank:]]/}"
         if [[ "${matched}" == 1 ]]; then
           resource="$1"
+          apidef_resource="$1"
           shift
         else
           # パステンプレートマッチング: /pet/99 → /pet/{petId} (#20)
@@ -340,6 +342,7 @@ xapicli() {
           ')
           if [[ -n "${template_key}" ]]; then
             resource="$1"
+            apidef_resource="${template_key}"
             shift
           else
             _err "Invalid argument: $1"
@@ -360,7 +363,7 @@ xapicli() {
           | .value[]
           | [.method + " " + $k]
             + (.query_parameters // [] | [.[]] | map("-q " + .name + (if .required then "*" else "" end)))
-            + (.post_parameters  // [] | [.[]] | map("-p " + .name + (if .required then "*" else "" end)))
+            + (.post_parameters  // [] | [.[]] | map("-p " + .name + (if .type == "array" then "[]" else "" end) + (if .required then "*" else "" end)))
           | select(
               ($m == "" or (.[0] | split(" ")[0]) == $m) and
               ($r == "" or (.[0] | split(" ")[1]) == $r)
@@ -426,10 +429,26 @@ xapicli() {
     else
       json_body="{}"
       if [[ ${#post_params[@]} -gt 0 ]]; then
+        # 配列型パラメータ名の一覧を取得 (#23)
+        local array_params
+        array_params=$(echo "${apidef}" | jq -r \
+          --arg r "${apidef_resource}" --arg m "${method}" \
+          '.[$r][]? | select(.method == $m) | .post_parameters[]? | select(.type == "array") | .name' \
+          | tr '\n' ':')
         local i
         for ((i=0; i<${#post_params[@]}; i+=2)); do
-          json_body=$(printf '%s' "${json_body}" | \
-            jq --arg k "${post_params[$i]}" --arg v "${post_params[$((i+1))]}" '. + {($k): $v}')
+          local _pk="${post_params[$i]}"
+          local _pv="${post_params[$((i+1))]}"
+          if [[ ":${array_params}:" == *":${_pk}:"* ]]; then
+            # 配列型: 初回は[$v]、2回目以降は追記
+            json_body=$(printf '%s' "${json_body}" | \
+              jq --arg k "${_pk}" --arg v "${_pv}" '
+                if has($k) then .[$k] += [$v] else . + {($k): [$v]} end
+              ')
+          else
+            json_body=$(printf '%s' "${json_body}" | \
+              jq --arg k "${_pk}" --arg v "${_pv}" '. + {($k): $v}')
+          fi
         done
       fi
     fi

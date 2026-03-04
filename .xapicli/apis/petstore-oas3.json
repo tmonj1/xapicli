@@ -17,6 +17,14 @@
           "required": true
         },
         {
+          "name": "photoUrls",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "required": true
+        },
+        {
           "name": "status",
           "type": "string",
           "description": "pet status in the store",
@@ -42,6 +50,14 @@
           "name": "name",
           "type": "string",
           "example": "doggie",
+          "required": true
+        },
+        {
+          "name": "photoUrls",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "required": true
         },
         {
