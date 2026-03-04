@@ -177,6 +177,20 @@ _xapicli_completion() {
       COMPREPLY=( $(compgen -W "${post_params}" -- "${cur}") )
       return 0
       ;;
+    /*)
+      # resource path: show applicable options (#13)
+      local _method="${COMP_WORDS[1]}"
+      local _resource="${prev}"
+      local _flags
+      _flags=$(echo "${apidef}" | jq -r --arg res "${_resource}" --arg m "${_method}" '
+        [(.[$res][]? | select(.method == $m)) as $ep |
+          (if (($ep.query_parameters // []) | length) > 0 then "-q" else empty end),
+          (if (($ep.post_parameters  // []) | length) > 0 then "-p" else empty end)
+        ] | unique | .[]
+      ')
+      COMPREPLY=( $(compgen -W "${_flags} --summary --help -d" -- "${cur}") )
+      return 0
+      ;;
   esac
 }
 
