@@ -326,10 +326,11 @@ xapicli() {
           # パステンプレートマッチング: /pet/99 → /pet/{petId} (#20)
           local template_key
           template_key=$(echo "${apidef}" | jq -r --arg path "$1" '
-            keys[] | . as $k |
+            [keys[] | . as $k |
             ($k | gsub("{[^}]+}"; "[^/]+")) as $pattern |
             if ($path | test("^" + $pattern + "$")) then $k else empty end
-          ' | head -1)
+            ][0] // empty
+          ')
           if [[ -n "${template_key}" ]]; then
             resource="$1"
             shift
