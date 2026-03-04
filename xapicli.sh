@@ -87,6 +87,13 @@ declare _XAPICLI_APIDEF_FILE_CACHE=""
 # Bash completion function for xapicli
 _xapicli_completion() {
 
+  # シェルオプションを安全な状態に設定し、xapicli()が設定したRETURNトラップをクリア (#18)
+  # set -u や set -o pipefail が有効な場合でも補完関数が途中で終了しないようにする
+  local _saved_opts
+  _saved_opts=$(set +o | grep -E 'nounset|pipefail|errexit')
+  set +euo pipefail
+  trap 'eval "$_saved_opts"' RETURN
+
   # 初期化処理
   COMPREPLY=()
   local cur prev
