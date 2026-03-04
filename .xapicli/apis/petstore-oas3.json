@@ -102,7 +102,12 @@
         {
           "name": "status",
           "type": "string",
-          "required": true
+          "required": true,
+          "enum": [
+            "available",
+            "pending",
+            "sold"
+          ]
         }
       ]
     }
@@ -124,12 +129,14 @@
         {
           "name": "name",
           "type": "string",
-          "required": false
+          "required": false,
+          "enum": []
         },
         {
           "name": "status",
           "type": "string",
-          "required": false
+          "required": false,
+          "enum": []
         }
       ],
       "post_parameters": []
@@ -146,7 +153,8 @@
         {
           "name": "additionalMetadata",
           "type": "string",
-          "required": false
+          "required": false,
+          "enum": []
         }
       ],
       "post_parameters": []
@@ -279,12 +287,14 @@
         {
           "name": "username",
           "type": "string",
-          "required": false
+          "required": false,
+          "enum": []
         },
         {
           "name": "password",
           "type": "string",
-          "required": false
+          "required": false,
+          "enum": []
         }
       ]
     }

@@ -77,7 +77,7 @@
               .value.parameters[]?
               | select(.in == "query")
               | select(.schema.type != "object" and .schema.type != "array")
-              | { name: .name, type: .schema.type, required: (.required // false) }
+              | { name: .name, type: .schema.type, required: (.required // false), enum: (.schema.enum // []) }
             ] // []
           ),
           post_parameters: (
