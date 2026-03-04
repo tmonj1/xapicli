@@ -17,7 +17,7 @@ HISTFILE=""
 trap 'IFS="$OLD_IFS"; eval "$OLD_SET"' RETURN
 
 # エラーが発生したコマンド名、行番号、EXITコードを出力
-trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND";' ERR
+trap 'rc=$?; cmd="${BASH_COMMAND}"; echo >&2 "$0: Error on line $LINENO: $cmd (exit $rc)"' ERR
 
 #
 # constants
@@ -177,7 +177,7 @@ xapicli() {
   trap 'IFS="$OLD_IFS"; eval "$OLD_SET"' RETURN
 
   # エラーが発生したコマンド名、行番号、EXITコードを出力
-  trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND";' ERR
+  trap 'rc=$?; cmd="${BASH_COMMAND}"; echo >&2 "$0: Error on line $LINENO: $cmd (exit $rc)"' ERR
 
   #
   # GNU getopt の確認
@@ -323,9 +323,22 @@ xapicli() {
           resource="$1"
           shift
         else
-          _err "Invalid argument: $1"
-          _usage
-          return 1
+          # パステンプレートマッチング: /pet/99 → /pet/{petId} (#20)
+          local template_key
+          template_key=$(echo "${apidef}" | jq -r --arg path "$1" '
+            [keys[] | . as $k |
+            ($k | gsub("{[^}]+}"; "[^/]+")) as $pattern |
+            if ($path | test("^" + $pattern + "$")) then $k else empty end
+            ][0] // empty
+          ')
+          if [[ -n "${template_key}" ]]; then
+            resource="$1"
+            shift
+          else
+            _err "Invalid argument: $1"
+            _usage
+            return 1
+          fi
         fi
         ;;
     esac
