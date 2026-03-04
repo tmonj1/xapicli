@@ -180,6 +180,23 @@ xapicli() {
   trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND";' ERR
 
   #
+  # GNU getopt の確認
+  #
+
+  local getopt_test
+  if getopt -T > /dev/null 2>&1; then
+    getopt_test=0
+  else
+    getopt_test=$?
+  fi
+  if [[ ${getopt_test} -ne 4 ]]; then
+    _err "GNU getopt が必要です。以下を実行してください:"
+    _err "  brew install gnu-getopt"
+    _err "  export PATH=\"/opt/homebrew/opt/gnu-getopt/bin:\$PATH\""
+    return 1
+  fi
+
+  #
   # load config and apidef file
   #
 
