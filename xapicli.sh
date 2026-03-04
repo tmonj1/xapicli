@@ -23,7 +23,8 @@ trap 'rc=$?; cmd="${BASH_COMMAND}"; echo >&2 "$0: Error on line $LINENO: $cmd (e
 # constants
 #
 
-declare readonly LONG_OPTS="help,summary::,summary-csv"
+declare readonly LONG_OPTS="help,summary::,summary-csv,version"
+declare readonly _XAPICLI_VERSION="0.1.0"
 
 # escape sequences for colored output on the console
 RSET="\e[0m"  # reset
@@ -238,6 +239,20 @@ xapicli() {
     return 1
   fi
 
+  # -h/--help/--version は config ロード前に処理 (#31)
+  for _arg in "$@"; do
+    case "${_arg}" in
+      -h|--help)
+        _usage
+        return 0
+        ;;
+      --version)
+        echo "xapicli ${_XAPICLI_VERSION}"
+        return 0
+        ;;
+    esac
+  done
+
   #
   # load config and apidef file
   #
@@ -280,6 +295,14 @@ xapicli() {
   local -a clean_args=()
   while [[ $# -gt 0 ]]; do
     case "$1" in
+      -h|--help)
+        _usage
+        return 0
+        ;;
+      --version)
+        echo "xapicli ${_XAPICLI_VERSION}"
+        return 0
+        ;;
       -q)
         shift
         if [[ $# -lt 2 ]]; then
