@@ -359,8 +359,8 @@ xapicli() {
           | .key as $k
           | .value[]
           | [.method + " " + $k]
-            + (.query_parameters // [] | [.[].name] | map("-q " + .))
-            + (.post_parameters  // [] | [.[].name] | map("-p " + .))
+            + (.query_parameters // [] | [.[]] | map("-q " + .name + (if .required then "*" else "" end)))
+            + (.post_parameters  // [] | [.[]] | map("-p " + .name + (if .required then "*" else "" end)))
           | select(
               ($m == "" or (.[0] | split(" ")[0]) == $m) and
               ($r == "" or (.[0] | split(" ")[1]) == $r)
