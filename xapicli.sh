@@ -27,9 +27,9 @@ declare readonly LONG_OPTS="help,summary::,summary-csv,version"
 declare readonly _XAPICLI_VERSION="0.1.0"
 
 # escape sequences for colored output on the console
-RSET="\e[0m"  # reset
-FRED="\e[31m" # foreground red
-FGRN="\e[32m" # foreground green
+RSET=$'\e[0m'  # reset
+FRED=$'\e[31m' # foreground red
+FGRN=$'\e[32m' # foreground green
 #FYEL="\e[43m" # background yellow
 
 #
