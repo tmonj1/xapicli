@@ -70,10 +70,15 @@ _msg() {
 # @exitcode 0
 _usage()
 {
-  _msg "Usage: xapicli <method> <resource> [options]"
+  _msg "Usage: xapicli [options] <method> <resource> [params]"
   _msg "Options:"
-  _msg "  -q <query_param> <value>  Query parameter"
-  _msg "  -p <post_param> <value>   Post parameter"
+  _msg "  -h, --help                Show this help message"
+  _msg "  --version                 Show version"
+  _msg "  --summary[=<resource>]    Print available endpoints"
+  _msg "  --summary-csv             Print endpoints in CSV format"
+  _msg "Params:"
+  _msg "  -q <name> <value>         Query parameter (repeatable)"
+  _msg "  -p <name> <value>         Body parameter (repeatable)"
   _msg "  -d <json>                 Raw JSON body (overrides -p)"
 }
 
