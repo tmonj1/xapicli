@@ -198,6 +198,7 @@ Methods:
 
 Options:
   --init <spec-file>     Initialize API from an OpenAPI spec file
+  -H <header: value>     Custom HTTP header (repeatable)
   -q <name> <value>      Query parameter (repeatable)
   -p <name> <value>      Body parameter (repeatable); builds a JSON object
                            - Repeat the same name to build a JSON array:
@@ -209,6 +210,11 @@ Options:
                            Required params are marked with *, array params with []
   --summary-csv          Print endpoints in CSV format
   --help                 Show usage
+
+Environment variables:
+  XAPICLI_CUSTOM_HEADER  Custom HTTP header(s) applied to every request.
+                           Use newlines to specify multiple headers:
+                           export XAPICLI_CUSTOM_HEADER=$'Authorization: Bearer token\nX-Tenant: acme'
 ```
 
 ### Examples
@@ -253,7 +259,7 @@ xapicli delete /pet/1
 - Only `application/json` request bodies are recognized
 - Array parameters are supported only when items are scalar types (string, integer, etc.); arrays of objects are not supported
 - Object parameters are supported one level deep via dot notation; deeper nesting is not supported
-- Authentication headers must be added manually (not supported natively)
+- Authentication headers can be passed via `-H "Authorization: Bearer token"` or the `XAPICLI_CUSTOM_HEADER` env var
 - `explode` and deeply nested object constraints are not enforced
 
 ---

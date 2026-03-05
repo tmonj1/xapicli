@@ -105,11 +105,14 @@ Options:
   --summary[=<resource>]    Print available endpoints; required params marked *, array params marked []
   --summary-csv             Print endpoints in CSV format
 Params:
+  -H <header: value>        Custom HTTP header (repeatable)
   -q <name> <value>         Query parameter (repeatable)
   -p <name> <value>         Body parameter (repeatable); builds a JSON object
                               Repeat the same name for array params: -p tags a -p tags b → {"tags":["a","b"]}
                               Use dot notation for object params: -p category.id 1 → {"category":{"id":"1"}}
   -d <json>                 Raw JSON body (overrides -p)
+Env:
+  XAPICLI_CUSTOM_HEADER     Custom HTTP header(s), newline-separated, applied to every request
 ```
 
 ## Code Modification Workflow
@@ -131,4 +134,4 @@ Individual instructions take precedence — e.g. "skip the issue", "don't open a
 - Array parameters are supported only when items are scalar types; arrays of objects are not supported
 - Object parameters are supported one level deep via dot notation; deeper nesting is not supported
 - `explode` is not supported
-- Authentication headers must be added manually (not supported natively)
+- Authentication headers can be passed via `-H "Authorization: Bearer token"` or the `XAPICLI_CUSTOM_HEADER` env var
