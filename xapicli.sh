@@ -126,6 +126,13 @@ _xapicli_init() {
     return 1
   }
 
+  # Validate that the resolved JSON is a proper OpenAPI spec (#47)
+  if ! echo "${resolved_json}" | jq -e 'has("paths")' > /dev/null 2>&1; then
+    _err "The file does not appear to be a valid OpenAPI spec (missing 'paths' key)"
+    _err "Pass the original OpenAPI spec file, not the generated API definition in ${apis_dir}/"
+    return 1
+  fi
+
   _info "Generating API definition ..."
   local tmp_filter
   tmp_filter=$(mktemp)
