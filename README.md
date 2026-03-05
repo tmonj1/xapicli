@@ -186,6 +186,22 @@ If the spec contains a `servers[0].url` entry, it is used automatically. Otherwi
 }
 ```
 
+### Managing multiple APIs
+
+Multiple APIs can be registered by running `--init` for each spec. Use `--use` to switch between them:
+
+```bash
+# Register multiple APIs
+xapicli --init petstore.json
+xapicli --init myapi.json
+
+# Switch the active API
+xapicli --use myapi
+
+# See all registered APIs and the current default
+xapicli --conf
+```
+
 ---
 
 ## Usage Reference
@@ -198,6 +214,7 @@ Methods:
 
 Options:
   --init <spec-file>     Initialize API from an OpenAPI spec file
+  --use <api-name>       Switch the active API (updates 'default' in xapicli.conf)
   --conf                 Show current configuration and env var settings
   -H <header: value>     Custom HTTP header (repeatable)
   -q <name> <value>      Query parameter (repeatable)

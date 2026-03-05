@@ -76,6 +76,7 @@ _usage()
   _msg "  -h, --help                Show this help message"
   _msg "  --version                 Show version"
   _msg "  --init <spec-file>        Initialize API from an OpenAPI spec file"
+  _msg "  --use <api-name>          Switch the active API (updates 'default' in xapicli.conf)"
   _msg "  --conf                    Show current configuration and env var settings"
   _msg "  --summary[=<resource>]    Print available endpoints"
   _msg "  --summary-csv             Print endpoints in CSV format"
@@ -424,6 +425,33 @@ xapicli() {
         _i=$((_i + 1))
         _xapicli_init "${!_i:-}"
         return $?
+        ;;
+      --use)
+        _i=$((_i + 1))
+        local _use_name="${!_i:-}"
+        if [[ -z "${_use_name}" ]]; then
+          _err "--use requires an API name argument"
+          _msg "Usage: xapicli --use <api-name>"
+          return 1
+        fi
+        local _use_conf_dir="${XAPICLI_CONF_DIR:-$HOME/.xapicli}"
+        local _use_conf_file="${_use_conf_dir}/xapicli.conf"
+        if [[ ! -f "${_use_conf_file}" ]]; then
+          _err "Config file not found: ${_use_conf_file}"
+          return 1
+        fi
+        if ! jq -e --arg n "${_use_name}" 'has($n) and ($n != "default")' "${_use_conf_file}" > /dev/null 2>&1; then
+          _err "API '${_use_name}' not found in ${_use_conf_file}"
+          _msg "Available APIs:"
+          jq -r 'keys[] | select(. != "default") | "  " + .' "${_use_conf_file}" >&2
+          return 1
+        fi
+        local _use_tmp
+        _use_tmp=$(mktemp)
+        jq --arg n "${_use_name}" '.default = $n' "${_use_conf_file}" > "${_use_tmp}" \
+          && mv "${_use_tmp}" "${_use_conf_file}"
+        _info "Switched to API: ${_use_name}"
+        return 0
         ;;
       --conf)
         local _conf_dir="${XAPICLI_CONF_DIR:-$HOME/.xapicli}"
