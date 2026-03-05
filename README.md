@@ -89,7 +89,7 @@ This repository includes a Docker Compose file for running the [Swagger Petstore
 ### 1. Start the Petstore server
 
 ```bash
-docker compose up -d
+docker compose -f examples/docker-compose.yml up -d
 ```
 
 The API will be available at `http://localhost:8080/api/v3/`.
