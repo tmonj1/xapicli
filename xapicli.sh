@@ -76,6 +76,7 @@ _usage()
   _msg "  -h, --help                Show this help message"
   _msg "  --version                 Show version"
   _msg "  --init <spec-file>        Initialize API from an OpenAPI spec file"
+  _msg "  --conf                    Show current configuration and env var settings"
   _msg "  --summary[=<resource>]    Print available endpoints"
   _msg "  --summary-csv             Print endpoints in CSV format"
   _msg "Params:"
@@ -400,7 +401,7 @@ xapicli() {
     return 1
   fi
 
-  # -h/--help/--version/--init は config ロード前に処理 (#31, #38)
+  # -h/--help/--version/--init/--conf は config ロード前に処理 (#31, #38, #43)
   local _i=1
   while [[ $_i -le $# ]]; do
     case "${!_i}" in
@@ -416,6 +417,27 @@ xapicli() {
         _i=$((_i + 1))
         _xapicli_init "${!_i:-}"
         return $?
+        ;;
+      --conf)
+        local _conf_dir="${XAPICLI_CONF_DIR:-$HOME/.xapicli}"
+        _msg "Config file  : ${_conf_dir}/xapicli.conf"
+        _msg "API def dir  : ${_conf_dir}/apis/"
+        _msg ""
+        _msg "XAPICLI_CONF_DIR      : ${XAPICLI_CONF_DIR:-(not set)}"
+        if [[ -n "${XAPICLI_CUSTOM_HEADER:-}" ]]; then
+          local _first=true
+          while IFS= read -r _hdr_line; do
+            if [[ "${_first}" == "true" ]]; then
+              _msg "XAPICLI_CUSTOM_HEADER : ${_hdr_line}"
+              _first=false
+            else
+              _msg "                       ${_hdr_line}"
+            fi
+          done <<< "${XAPICLI_CUSTOM_HEADER}"
+        else
+          _msg "XAPICLI_CUSTOM_HEADER : (not set)"
+        fi
+        return 0
         ;;
     esac
     _i=$((_i + 1))

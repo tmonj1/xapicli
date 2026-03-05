@@ -198,6 +198,7 @@ Methods:
 
 Options:
   --init <spec-file>     Initialize API from an OpenAPI spec file
+  --conf                 Show current configuration and env var settings
   -H <header: value>     Custom HTTP header (repeatable)
   -q <name> <value>      Query parameter (repeatable)
   -p <name> <value>      Body parameter (repeatable); builds a JSON object
