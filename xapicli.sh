@@ -79,6 +79,7 @@ _usage()
   _msg "  --summary[=<resource>]    Print available endpoints"
   _msg "  --summary-csv             Print endpoints in CSV format"
   _msg "Params:"
+  _msg "  -H <header: value>        Custom HTTP header (repeatable)"
   _msg "  -q <name> <value>         Query parameter (repeatable)"
   _msg "  -p <name> <value>         Body parameter (repeatable)"
   _msg "  -d <json>                 Raw JSON body (overrides -p)"
@@ -349,7 +350,7 @@ _xapicli_completion() {
           (if (($ep.post_parameters  // []) | length) > 0 then "-p" else empty end)
         ] | unique | .[]
       ')
-      COMPREPLY=( $(compgen -W "${_flags} --summary --help -d" -- "${cur}") )
+      COMPREPLY=( $(compgen -W "${_flags} --summary --help -H -d" -- "${cur}") )
       return 0
       ;;
   esac
@@ -456,8 +457,10 @@ xapicli() {
   #
 
   # Pre-process: -q/-p はそれぞれ <name> <value> の2引数、-d は <json> の1引数を取る (#3, #4)
+  # -H は <header: value> の1引数 (#39)
   local -a query_params=()
   local -a post_params=()
+  local -a custom_headers=()
   local raw_body=""
   local -a clean_args=()
   while [[ $# -gt 0 ]]; do
@@ -469,6 +472,15 @@ xapicli() {
       --version)
         echo "xapicli ${_XAPICLI_VERSION}"
         return 0
+        ;;
+      -H)
+        shift
+        if [[ $# -lt 1 ]]; then
+          _err "'-H' requires one argument: <header: value>"
+          return 1
+        fi
+        custom_headers+=("$1")
+        shift
         ;;
       -q)
         shift
@@ -503,6 +515,13 @@ xapicli() {
         ;;
     esac
   done
+
+  # XAPICLI_CUSTOM_HEADER 環境変数からカスタムヘッダーを追加 (改行区切り) (#39)
+  if [[ -n "${XAPICLI_CUSTOM_HEADER:-}" ]]; then
+    while IFS= read -r _hdr; do
+      [[ -n "${_hdr}" ]] && custom_headers+=("${_hdr}")
+    done <<< "${XAPICLI_CUSTOM_HEADER}"
+  fi
 
   local args
   args=$(getopt -o "" -l "${LONG_OPTS}" -- ${clean_args[@]+"${clean_args[@]}"}) || return 1
@@ -641,11 +660,20 @@ xapicli() {
     full_url+="?${query_string}"
   fi
 
+  # カスタムヘッダーを curl の引数配列に変換 (#39)
+  local -a curl_header_args=()
+  local _ch
+  for _ch in ${custom_headers[@]+"${custom_headers[@]}"}; do
+    curl_header_args+=("-H" "${_ch}")
+  done
+
   # HTTPリクエストの実行 (#1)
   local method_upper
   method_upper=$(printf '%s' "${method}" | tr '[:lower:]' '[:upper:]')
   if [[ "${method}" == "get" || "${method}" == "delete" ]]; then
-    curl -s -X "${method_upper}" "${full_url}"
+    curl -s -X "${method_upper}" \
+      ${curl_header_args[@]+"${curl_header_args[@]}"} \
+      "${full_url}"
   else
     # -d で生JSONが指定された場合はそれを使用、なければ -p からJSONを組み立て
     local json_body
@@ -683,6 +711,7 @@ xapicli() {
     fi
     curl -s -X "${method_upper}" "${full_url}" \
       -H "Content-Type: application/json" \
+      ${curl_header_args[@]+"${curl_header_args[@]}"} \
       -d "${json_body}"
   fi
 }
