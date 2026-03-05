@@ -9,7 +9,7 @@
 | `bash` 3.2+ | macOS ships with 3.2; works as-is |
 | `jq` | JSON processor |
 | GNU `getopt` | macOS ships with BSD getopt (incompatible); GNU version is required |
-| `node` + `npm` | Required for `json-refs` (resolves `$ref` in OpenAPI specs) |
+| `node` + `npm` | Required for `json-refs` (used internally by `--init` to resolve `$ref` in OpenAPI specs) |
 | Docker | Optional; only needed for the Petstore demo |
 
 ---
@@ -43,7 +43,7 @@ brew install jq
 
 ### Step 3 — Install json-refs
 
-`json-refs` resolves `$ref` references in OpenAPI spec files before xapicli can process them.
+`json-refs` is used internally by `xapicli --init` to resolve `$ref` references in OpenAPI spec files.
 
 ```bash
 npm install -g json-refs
@@ -157,30 +157,30 @@ $ xapicli get /pet/findByStatus -q status <TAB>
 
 ## Adding Your Own API
 
-### Step 1 — Prepare the OpenAPI spec
-
-xapicli requires all `$ref` references to be resolved first:
+### Step 1 — Run `--init`
 
 ```bash
-json-refs resolve your-api-spec.json > your-api-spec-resolved.json
+xapicli --init your-api-spec.json
 ```
 
-### Step 2 — Generate the xapicli API definition
+This single command:
+1. Resolves all `$ref` references in the spec using `json-refs`
+2. Transforms the spec into xapicli's internal API definition format
+3. Saves the result to `$XAPICLI_CONF_DIR/apis/<name>.json`
+4. Creates or updates `$XAPICLI_CONF_DIR/xapicli.conf` with the new API entry
 
-```bash
-cat your-api-spec-resolved.json | jq -f install-api.jq > .xapicli/apis/your-api.json
-```
+The API name is derived from the spec filename (e.g., `your-api-spec.json` → `your-api-spec`).
 
-### Step 3 — Register the API in the config file
+### Step 2 — Set the base URL
 
-Edit `.xapicli/xapicli.conf`:
+If the spec contains a `servers[0].url` entry, it is used automatically. Otherwise, edit `$XAPICLI_CONF_DIR/xapicli.conf` and set the `url` field:
 
 ```json
 {
-  "default": "your-api",
-  "your-api": {
-    "openapispec": "../path/to/your-api-spec.json",
-    "apidef": "your-api.json",
+  "default": "your-api-spec",
+  "your-api-spec": {
+    "openapispec": "your-api-spec.json",
+    "apidef": "your-api-spec.json",
     "url": "https://your-api-base-url/"
   }
 }
@@ -197,6 +197,7 @@ Methods:
   get | post | put | delete
 
 Options:
+  --init <spec-file>     Initialize API from an OpenAPI spec file
   -q <name> <value>      Query parameter (repeatable)
   -p <name> <value>      Body parameter (repeatable); builds a JSON object
                            - Repeat the same name to build a JSON array:
