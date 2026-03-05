@@ -24,6 +24,7 @@ trap 'rc=$?; cmd="${BASH_COMMAND}"; echo >&2 "$0: Error on line $LINENO: $cmd (e
 #
 
 declare readonly LONG_OPTS="help,summary::,summary-csv,version"
+declare readonly LONG_OPTS_INIT="init:"
 declare readonly _XAPICLI_VERSION="0.1.0"
 
 # escape sequences for colored output on the console
@@ -74,12 +75,166 @@ _usage()
   _msg "Options:"
   _msg "  -h, --help                Show this help message"
   _msg "  --version                 Show version"
+  _msg "  --init <spec-file>        Initialize API from an OpenAPI spec file"
   _msg "  --summary[=<resource>]    Print available endpoints"
   _msg "  --summary-csv             Print endpoints in CSV format"
   _msg "Params:"
   _msg "  -q <name> <value>         Query parameter (repeatable)"
   _msg "  -p <name> <value>         Body parameter (repeatable)"
   _msg "  -d <json>                 Raw JSON body (overrides -p)"
+}
+
+# @description initialize API from an OpenAPI spec file
+# @param $1 path to the OpenAPI spec file (JSON)
+# @exitcode 0 on success, 1 on error
+_xapicli_init() {
+  local spec_file="${1:-}"
+
+  if [[ -z "${spec_file}" ]]; then
+    _err "--init requires a spec file argument"
+    _msg "Usage: xapicli --init <openapi-spec.json>"
+    return 1
+  fi
+
+  if [[ ! -f "${spec_file}" ]]; then
+    _err "File not found: ${spec_file}"
+    return 1
+  fi
+
+  if ! command -v json-refs > /dev/null 2>&1; then
+    _err "json-refs is required. Install it with: npm install -g json-refs"
+    return 1
+  fi
+
+  # Derive API name from filename (strip path and extension)
+  local api_name
+  api_name=$(basename "${spec_file}" | sed 's/\.[^.]*$//')
+
+  local conf_dir="${XAPICLI_CONF_DIR:-$HOME/.xapicli}"
+  local apis_dir="${conf_dir}/apis"
+  local conf_file="${conf_dir}/xapicli.conf"
+  local output_file="${apis_dir}/${api_name}.json"
+
+  mkdir -p "${apis_dir}"
+
+  _info "Resolving \$ref references in ${spec_file} ..."
+  local resolved_json
+  resolved_json=$(json-refs resolve "${spec_file}") || {
+    _err "Failed to resolve \$ref references in ${spec_file}"
+    return 1
+  }
+
+  _info "Generating API definition ..."
+  local tmp_filter
+  tmp_filter=$(mktemp)
+  cat > "${tmp_filter}" <<'INSTALL_API_JQ'
+# extract elements under "paths"
+.paths
+# split each resource to a single line in "key=resource-name, value=api-desc" format
+| to_entries
+# convert each line into the {"resource-name": {api-desc}} format using `map`
+| map({
+    key,
+    value: [
+      .value
+      # split each HTTP method to a single line in "key=HTTP-method, value=api-desc" format
+      | to_entries[]
+      # convert each line into the {"method":"HTTP-method",
+      # {query_parameters, post_parameters, post_parameters_required}} format
+      | {
+          method: .key,
+          query_parameters: (
+            [
+              .value.parameters[]?
+              | select(.in == "query")
+              | select(.schema.type != "object" and .schema.type != "array")
+              | { name: .name, type: .schema.type, required: (.required // false), enum: (.schema.enum // []) }
+            ] // []
+          ),
+          post_parameters: (
+            [
+              ((.value.requestBody.content["application/json"].schema.properties // {})
+              | to_entries[])
+              | if .value.type == "object" then
+                  (.key as $parent | ((.value.properties // {}) | to_entries[]) |
+                    {"name": ($parent + "." + .key)} + .value)
+                else
+                  {"name": .key} + .value
+                end
+            ]
+            | map(select(.type != "object" and (.type != "array" or (.items.type? != "object" and .items.type? != "array"))))
+          ),
+          post_parameters_required: (
+            .value.requestBody.content["application/json"].schema.required // {}
+          )
+        }
+      | if .method == "post" or .method == "put" then
+          .post_parameters_required as $required_params
+          | .post_parameters
+          |= map (
+              . as $post_param
+              |
+              if $required_params | any (. == $post_param.name) then
+                $post_param + {required: true}
+              else
+                $post_param
+              end
+            )
+        else
+          del(.post_parameters)
+        end
+      | del(.post_parameters_required)
+    ]
+  })
+| from_entries
+| del(.. | .xml?)
+INSTALL_API_JQ
+
+  echo "${resolved_json}" | jq -f "${tmp_filter}" > "${output_file}"
+  local jq_rc=$?
+  rm -f "${tmp_filter}"
+
+  if [[ ${jq_rc} -ne 0 ]]; then
+    _err "Failed to generate API definition"
+    rm -f "${output_file}"
+    return 1
+  fi
+
+  # Extract base URL from spec (servers[0].url), fallback to empty string
+  local base_url
+  base_url=$(echo "${resolved_json}" | jq -r '.servers[0].url // ""')
+  [[ "${base_url}" == "null" ]] && base_url=""
+
+  # Update xapicli.conf: add/update entry; set as default only if conf doesn't exist yet
+  if [[ ! -f "${conf_file}" ]]; then
+    jq -n \
+      --arg name "${api_name}" \
+      --arg spec "${spec_file}" \
+      --arg apidef "${api_name}.json" \
+      --arg url "${base_url}" \
+      '{default: $name, ($name): {openapispec: $spec, apidef: $apidef, url: $url}}' \
+      > "${conf_file}"
+  else
+    local tmp_conf
+    tmp_conf=$(mktemp)
+    jq \
+      --arg name "${api_name}" \
+      --arg spec "${spec_file}" \
+      --arg apidef "${api_name}.json" \
+      --arg url "${base_url}" \
+      '.[$name] = {openapispec: $spec, apidef: $apidef, url: $url}' \
+      "${conf_file}" > "${tmp_conf}" && mv "${tmp_conf}" "${conf_file}"
+  fi
+
+  _info "API definition saved to: ${output_file}"
+  _info "Config updated: ${conf_file}"
+  if [[ -n "${base_url}" ]]; then
+    _info "Base URL set to: ${base_url}"
+    _msg "  (Update 'url' in ${conf_file} if this is incorrect)"
+  else
+    _msg "Note: No base URL found in spec. Set 'url' in ${conf_file} manually."
+  fi
+  return 0
 }
 
 #
@@ -244,9 +399,10 @@ xapicli() {
     return 1
   fi
 
-  # -h/--help/--version は config ロード前に処理 (#31)
-  for _arg in "$@"; do
-    case "${_arg}" in
+  # -h/--help/--version/--init は config ロード前に処理 (#31, #38)
+  local _i=1
+  while [[ $_i -le $# ]]; do
+    case "${!_i}" in
       -h|--help)
         _usage
         return 0
@@ -255,7 +411,13 @@ xapicli() {
         echo "xapicli ${_XAPICLI_VERSION}"
         return 0
         ;;
+      --init)
+        _i=$((_i + 1))
+        _xapicli_init "${!_i:-}"
+        return $?
+        ;;
     esac
+    _i=$((_i + 1))
   done
 
   #

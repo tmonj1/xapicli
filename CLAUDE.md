@@ -23,17 +23,12 @@ export PATH="/opt/homebrew/opt/gnu-getopt/bin:${PATH}"
 ## Workflow: Adding an API
 
 ```bash
-# 1. Install json-refs (resolves $ref references in OpenAPI specs)
+# 1. Install json-refs (used internally by --init)
 npm install -g json-refs
 
-# 2. Resolve all $refs in the OpenAPI spec
-json-refs resolve examples/petstore-oas3.json > examples/petstore-oas3-resolved.json
-
-# 3. Generate the internal API definition file
-cat examples/petstore-oas3-resolved.json | jq -f install-api.jq > .xapicli/apis/petstore-oas3.json
-
-# 4. Point xapicli at the config directory
+# 2. Initialize the API (resolves $refs and generates the API definition in one step)
 export XAPICLI_CONF_DIR=${PWD}/.xapicli
+xapicli --init examples/petstore-oas3.json
 ```
 
 ## Architecture
@@ -55,10 +50,11 @@ The script is designed to be **sourced** (`source xapicli.sh`), not run directly
   - Array parameters: repeat the same `-p` name → `{"tags":["a","b"]}`
   - Dot-notation object parameters: `-p category.id 1` → `{"category":{"id":"1"}}`
   - Path parameters (e.g., `/pet/99`) are matched to templates (e.g., `/pet/{petId}`) via jq regex
-  - `-h`/`--help` and `--version` are handled before config loading
+  - `-h`/`--help`, `--version`, and `--init` are handled before config loading
+- **`_xapicli_init()`** — Handles `--init <spec-file>`. Runs `json-refs resolve` on the spec, applies the embedded jq filter (formerly `install-api.jq`), writes the result to `$XAPICLI_CONF_DIR/apis/`, and updates `xapicli.conf`.
 
-### `install-api.jq`
-A jq filter that transforms a resolved OpenAPI 3.0 `paths` object into a flat JSON structure used at runtime:
+### API definition format (output of `--init`)
+A jq filter embedded in `_xapicli_init()` transforms a resolved OpenAPI 3.0 `paths` object into a flat JSON structure used at runtime:
 ```json
 {
   "/pet": [
@@ -77,7 +73,7 @@ A jq filter that transforms a resolved OpenAPI 3.0 `paths` object into a flat JS
 ```
 Key transformation rules:
 - Only `application/json` request bodies are recognized
-- `$refs` must be pre-resolved before passing to this filter
+- `$refs` are pre-resolved automatically by `--init` via `json-refs`
 - `query_parameters`: includes `enum` field for tab completion; object/array type query params are excluded
 - `post_parameters`: object-type properties are flattened one level into dot-notation entries (e.g., `category` → `category.id`, `category.name`); array-type properties with scalar items are included with `type: "array"`; arrays of objects and deeper nesting are excluded
 - Required parameters are marked with `required: true`
@@ -105,6 +101,7 @@ xapicli [options] <method> <resource> [params]
 Options:
   -h, --help                Show this help message
   --version                 Show version
+  --init <spec-file>        Initialize API from an OpenAPI spec file
   --summary[=<resource>]    Print available endpoints; required params marked *, array params marked []
   --summary-csv             Print endpoints in CSV format
 Params:
