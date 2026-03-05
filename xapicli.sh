@@ -25,7 +25,7 @@ trap 'rc=$?; cmd="${BASH_COMMAND}"; echo >&2 "$0: Error on line $LINENO: $cmd (e
 
 declare readonly LONG_OPTS="help,summary::,summary-csv,version"
 declare readonly LONG_OPTS_INIT="init:"
-declare readonly _XAPICLI_VERSION="0.1.0"
+declare readonly _XAPICLI_VERSION="0.4.0"
 
 # escape sequences for colored output on the console
 RSET=$'\e[0m'  # reset
