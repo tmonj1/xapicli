@@ -18,6 +18,8 @@ export PATH="/opt/homebrew/opt/gnu-getopt/bin:${PATH}"
 
 **Formatting:** Uses `shfmt` via the VSCode ShellFormat extension. Set `shellformat.path` in `.vscode/settings.json` to the `shfmt` binary path.
 
+**Note:** The codebase targets bash 3.2 (macOS default). Avoid bash 4.0+ features such as `${var^^}` or `readarray -t`.
+
 ## Workflow: Adding an API
 
 ```bash
@@ -44,10 +46,16 @@ The script is designed to be **sourced** (`source xapicli.sh`), not run directly
 - **`_xapicli_completion()`** — Bash completion handler registered via `complete -F`. Completes:
   - HTTP methods after `xapicli`
   - Resource paths filtered by the selected method
-  - Options (`-q`, `-p`, `-d`, `--summary`, `--help`) after a resource path, based on what the endpoint supports
+  - Options (`-q`, `-p`, `-d`, `--summary`, `--help`) after a resource path; only options relevant to the endpoint are shown (e.g. `-q` only appears if the endpoint has query parameters)
   - Query/post parameter names after `-q`/`-p`
   - Enum values after a parameter name (when the parameter has an `enum` constraint)
-- **`xapicli()`** — Main CLI function. Parses args with GNU `getopt`, loads the API definition, and executes HTTP requests via `curl`. Supports GET, POST, PUT, DELETE. POST/PUT bodies are assembled from `-p` flags or passed raw via `-d`. Path parameters (e.g., `/pet/99`) are matched to templates (e.g., `/pet/{petId}`) via jq regex.
+  - API definition is cached in a global variable to avoid re-reading the file on every keypress
+- **`xapicli()`** — Main CLI function. Parses args with GNU `getopt`, loads the API definition, and executes HTTP requests via `curl`. Supports GET, POST, PUT, DELETE.
+  - POST/PUT bodies are assembled from `-p` flags or passed raw via `-d`
+  - Array parameters: repeat the same `-p` name → `{"tags":["a","b"]}`
+  - Dot-notation object parameters: `-p category.id 1` → `{"category":{"id":"1"}}`
+  - Path parameters (e.g., `/pet/99`) are matched to templates (e.g., `/pet/{petId}`) via jq regex
+  - `-h`/`--help` and `--version` are handled before config loading
 
 ### `install-api.jq`
 A jq filter that transforms a resolved OpenAPI 3.0 `paths` object into a flat JSON structure used at runtime:
@@ -70,9 +78,10 @@ A jq filter that transforms a resolved OpenAPI 3.0 `paths` object into a flat JS
 Key transformation rules:
 - Only `application/json` request bodies are recognized
 - `$refs` must be pre-resolved before passing to this filter
-- `query_parameters`: includes `enum` field for tab completion
-- `post_parameters`: object-type properties are flattened one level into dot-notation entries (e.g., `category` → `category.id`, `category.name`); array-type properties with scalar items are included with `type: "array"`
+- `query_parameters`: includes `enum` field for tab completion; object/array type query params are excluded
+- `post_parameters`: object-type properties are flattened one level into dot-notation entries (e.g., `category` → `category.id`, `category.name`); array-type properties with scalar items are included with `type: "array"`; arrays of objects and deeper nesting are excluded
 - Required parameters are marked with `required: true`
+- GET/DELETE endpoints do not have a `post_parameters` field
 
 ### Configuration (`.xapicli/xapicli.conf`)
 ```json
@@ -92,16 +101,31 @@ The `apidef` field points to the processed file under `.xapicli/apis/`. `XAPICLI
 ```bash
 source xapicli.sh
 
-xapicli <method> <resource> [options]
-  -q <name> <value>      Query parameter (repeatable)
-  -p <name> <value>      Body parameter (repeatable); builds a JSON object
-                           Repeat the same name for array params: -p tags a -p tags b → {"tags":["a","b"]}
-                           Use dot notation for object params: -p category.id 1 → {"category":{"id":"1"}}
-  -d <json>              Raw JSON body (overrides -p)
-  --summary[=resource]   Print available endpoints; required params marked *, array params marked []
-  --summary-csv          Print endpoints in CSV format
-  --help
+xapicli [options] <method> <resource> [params]
+Options:
+  -h, --help                Show this help message
+  --version                 Show version
+  --summary[=<resource>]    Print available endpoints; required params marked *, array params marked []
+  --summary-csv             Print endpoints in CSV format
+Params:
+  -q <name> <value>         Query parameter (repeatable)
+  -p <name> <value>         Body parameter (repeatable); builds a JSON object
+                              Repeat the same name for array params: -p tags a -p tags b → {"tags":["a","b"]}
+                              Use dot notation for object params: -p category.id 1 → {"category":{"id":"1"}}
+  -d <json>                 Raw JSON body (overrides -p)
 ```
+
+## Code Modification Workflow
+
+When modifying source code, follow these steps unless instructed otherwise:
+
+1. Create a GitHub issue for the change (if one does not already exist)
+2. Create a new topic branch from `main` and make the fix there
+3. Commit the changes to the topic branch
+4. Push the topic branch to GitHub
+5. Create a Pull Request
+
+Individual instructions take precedence — e.g. "skip the issue", "don't open a PR yet" override the above steps.
 
 ## Known Limitations
 
