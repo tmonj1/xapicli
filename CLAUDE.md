@@ -102,6 +102,7 @@ Options:
   -h, --help                Show this help message
   --version                 Show version
   --init <spec-file>        Initialize API from an OpenAPI spec file
+  --conf                    Show current configuration and env var settings
   --summary[=<resource>]    Print available endpoints; required params marked *, array params marked []
   --summary-csv             Print endpoints in CSV format
 Params:
