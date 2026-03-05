@@ -420,7 +420,8 @@ xapicli() {
         ;;
       --conf)
         local _conf_dir="${XAPICLI_CONF_DIR:-$HOME/.xapicli}"
-        _msg "Config file  : ${_conf_dir}/xapicli.conf"
+        local _conf_file="${_conf_dir}/xapicli.conf"
+        _msg "Config file  : ${_conf_file}"
         _msg "API def dir  : ${_conf_dir}/apis/"
         _msg ""
         _msg "XAPICLI_CONF_DIR      : ${XAPICLI_CONF_DIR:-(not set)}"
@@ -436,6 +437,13 @@ xapicli() {
           done <<< "${XAPICLI_CUSTOM_HEADER}"
         else
           _msg "XAPICLI_CUSTOM_HEADER : (not set)"
+        fi
+        _msg ""
+        _msg "--- xapicli.conf ---"
+        if [[ -f "${_conf_file}" ]]; then
+          _msg "$(cat "${_conf_file}")"
+        else
+          _msg "(file not found)"
         fi
         return 0
         ;;
