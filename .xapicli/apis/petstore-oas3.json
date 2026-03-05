@@ -102,7 +102,7 @@
         {
           "name": "status",
           "type": "string",
-          "required": true,
+          "required": false,
           "enum": [
             "available",
             "pending",
