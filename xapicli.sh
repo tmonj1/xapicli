@@ -11,7 +11,7 @@ OLD_SET=$(set +o | grep -e nounset -e pipefail)
 # 本スクリプトでの設定
 IFS=$'\t\n'
 set -uo pipefail
-HISTFILE=""
+unset HISTFILE
 
 # スクリプト終了時(source実行時)、IFSとオプション設定を元に戻す
 trap 'IFS="$OLD_IFS"; eval "$OLD_SET"' RETURN
